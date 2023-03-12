@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Copyright © 2023. Richard P. Parkins, M. A.
+   Released under GPL V3 or later
+  -->
 <resources>
     <string name="app_name">xword</string>
+    <string name="match">match</string>
+    <string name="anagram">anagram</string>
 </resources>

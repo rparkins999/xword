@@ -1,13 +1,16 @@
+/*
+ * Copyright © 2023. Richard P. Parkins, M. A.
+ * Released under GPL V3 or later
+ */
 package uk.co.yahoo.p1rpp.xword;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
 import uk.co.yahoo.p1rpp.xword.databinding.ActivityMainBinding;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     // Used to load the 'xword' library on application startup.
     static {
@@ -24,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         // Example of a call to a native method
-        TextView tv = binding.sampleText;
+        TextView tv =new TextView(this);
         tv.setText(stringFromJNI());
     }
 
