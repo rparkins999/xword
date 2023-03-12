@@ -10,13 +10,4 @@
     android:id="@+id/container"
     tools:context=".MainActivity"
     android:orientation="vertical">
-    <uk.co.yahoo.p1rpp.xword.MatchTextEditor
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-    </uk.co.yahoo.p1rpp.xword.MatchTextEditor>
-    <Button
-        android:id="@+id/ActionButton"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content">
-    </Button>
 </LinearLayout>

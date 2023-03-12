@@ -7,9 +7,30 @@ plugins {
     id 'com.android.application'
 }
 
+def keystorePropertiesFile = rootProject.file("../Keys/keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+def gitdata = new ByteArrayOutputStream()
+// change this line to /* if not using git
+exec {
+    commandLine "git", "--no-pager", "show", "-s", "--format=from commit %H of %as"
+    standardOutput = gitdata;
+}
+//*/
+
 android {
     namespace 'uk.co.yahoo.p1rpp.xword'
     compileSdk 33
+
+    signingConfigs {
+        config {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
 
     defaultConfig {
         applicationId "uk.co.yahoo.p1rpp.xword"
@@ -25,6 +46,14 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            delete("build/intermediates/incremental/mergeReleaseAssets/merger.xml")
+            resValue("string", 'build_time', "${(new Date()).toString()}")
+        }
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            delete("build/intermediates/incremental/mergeDebugAssets/merger.xml")
+            resValue("string", 'build_time', "${(new Date()).toString()}")
         }
     }
     compileOptions {

@@ -12,7 +12,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.method.ArrowKeyMovementMethod;
 import android.util.AttributeSet;
-import android.widget.Button;
 import android.widget.EditText;
 
 @SuppressLint("AppCompatCustomView")
@@ -37,9 +36,8 @@ public class MatchTextEditor extends EditText {
                 }
                 else if (c == '\n')
                 {
-                    Button button = (Button) getRootView().findViewById(R.id.ActionButton);
                     ssb.replace(i, end, "");
-                    button.callOnClick();
+                    ((MainActivity)mContext).doActionButton();
                 }
                 else
                 {
@@ -77,37 +75,12 @@ public class MatchTextEditor extends EditText {
         createExtras();
     }
 
-    public void UpdateButton() {
-        Button button = (Button) getRootView().findViewById(R.id.ActionButton);
-        if (button != null)
-        {
-            CharSequence cs = getText();
-            if (cs.length() > 0)
-            {
-                if (cs.toString().contains("?"))
-                {
-                    button.setText(mContext.getString(R.string.match));
-                }
-                else
-                {
-                    button.setText(mContext.getString(R.string.anagram));
-                }
-                button.setEnabled(true);
-                button.setVisibility(VISIBLE);
-            }
-            else
-            {
-                button.setEnabled(false);
-                button.setVisibility(INVISIBLE);
-                button.setText("");
-            }
-        }
-    }
-
     @Override
     protected void onTextChanged(CharSequence text, int start,
                                  int lengthBefore, int lengthAfter) {
         super.onTextChanged(text, start, lengthBefore, lengthAfter);
-        UpdateButton();
+        if (mContext != null) {
+            ((MainActivity)mContext).setActionButton();
+        }
     }
 }

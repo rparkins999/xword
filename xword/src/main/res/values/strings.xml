@@ -3,8 +3,10 @@
    Copyright © 2023. Richard P. Parkins, M. A.
    Released under GPL V3 or later
   -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">xword</string>
     <string name="match">match</string>
     <string name="anagram">anagram</string>
+    <string name="texttomatch" tools:ignore="ExtraTranslation">
+        Text to match</string>
 </resources>
