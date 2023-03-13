@@ -7,6 +7,7 @@
     <string name="app_name">xword</string>
     <string name="match">match</string>
     <string name="anagram">anagram</string>
+    <string name="reset">reset</string>
     <string name="texttomatch" tools:ignore="ExtraTranslation">
         Text to match</string>
 </resources>

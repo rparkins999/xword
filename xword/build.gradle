@@ -11,11 +11,24 @@ def keystorePropertiesFile = rootProject.file("../Keys/keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
-def gitdata = new ByteArrayOutputStream()
+def gitdata1 = new ByteArrayOutputStream()
+def gitdata2 = new ByteArrayOutputStream()
+def gitdata3 = new ByteArrayOutputStream()
 // change this line to /* if not using git
 exec {
-    commandLine "git", "--no-pager", "show", "-s", "--format=from commit %H of %as"
-    standardOutput = gitdata;
+    commandLine "git", "--no-pager", "show", "-s",
+            "--format=from commit %H"
+    standardOutput = gitdata1
+}
+exec {
+    commandLine "git", "--no-pager", "show", "-s",
+            "--date=format:%H:%M:%S GMT%z %a %b %d %Y",
+            "--format=of %ad"
+    standardOutput = gitdata2
+}
+exec {
+    commandLine "git", "branch", "--show-current"
+    standardOutput = gitdata3
 }
 //*/
 
@@ -38,22 +51,32 @@ android {
         targetSdk 33
         versionCode 1
         versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.config
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             delete("build/intermediates/incremental/mergeReleaseAssets/merger.xml")
-            resValue("string", 'build_time', "${(new Date()).toString()}")
+            resValue("string", 'build_time',
+                    "${(new Date()).format('HH:mm:ss \'GMT\'Z EEE dd MMM yyyy')}")
+            resValue("string", 'build_git1', "${gitdata1.toString()}")
+            resValue("string", 'build_git2', "${gitdata2.toString()}")
+            resValue("string", 'build_git3',
+                    "${" on branch " + gitdata3.toString()}")
         }
         debug {
             minifyEnabled false
+            signingConfig signingConfigs.config
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             delete("build/intermediates/incremental/mergeDebugAssets/merger.xml")
-            resValue("string", 'build_time', "${(new Date()).toString()}")
+            resValue("string", 'build_time',
+                    "${(new Date()).format('HH:mm:ss \'GMT\'Z EEE dd MMM yyyy')}")
+            resValue("string", 'build_git1', "${gitdata1.toString()}")
+            resValue("string", 'build_git2', "${gitdata2.toString()}")
+            resValue("string", 'build_git3',
+                    "${" on branch " + gitdata3.toString()}")
         }
     }
     compileOptions {

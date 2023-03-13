@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -29,11 +30,26 @@ public class MainActivity extends Activity {
 
     MatchTextEditor mEditor;
     static final String EDITOR_CONTENT = "EditorContent";
+    ArrayAdapter<String> mAdapter;
+    ListView mResults;
     Button mActionButton;
     Boolean mActionButtonPressed;
     static final String ACTION_BUTTON_PRESSED = "ActionButtonPressed";
 
     public void doActionButton() {
+        if (mActionButtonPressed) {
+            mEditor.setText("");
+            mEditor.setVisibility(View.VISIBLE);
+            mAdapter.clear();
+            mResults.setVisibility(View.GONE);
+            setActionButton();
+        } else {
+            mEditor.setVisibility(View.GONE);
+            mResults.setVisibility(View.VISIBLE);
+            mActionButton.setText(getString(R.string.reset));
+            // do the search here
+        }
+        mActionButtonPressed = !mActionButtonPressed;
     }
 
     public void setActionButton() {
@@ -63,17 +79,29 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         LinearLayout container = findViewById(R.id.container);
-        TextView buildStamp = new TextView(this);
         String versionInfo = getString(R.string.app_name) +
-            " version " +
-            BuildConfig.VERSION_NAME +
-            " built " +
-            getString(R.string.build_time);
+            " version " + BuildConfig.VERSION_NAME +
+            " built " + getString(R.string.build_time);
+        TextView buildStamp = new TextView(this);
         buildStamp.setText(versionInfo);
         container.addView(buildStamp);
+        String gitinfo1 = getString(R.string.build_git1);
+        if ((gitinfo1 != null) && !gitinfo1.isEmpty()) {
+            TextView gitstamp = new TextView(this);
+            gitstamp.setText(
+                gitinfo1
+                + "\n" + getString(R.string.build_git2)
+                + "\n" + getString(R.string.build_git3)
+            );
+            container.addView(gitstamp);
+        }
         mEditor = new MatchTextEditor(this);
         mEditor.setHint(R.string.texttomatch);
         container.addView(mEditor);
+        mAdapter = new ArrayAdapter<String>(this, R.layout.resultitem);
+        mResults = new ListView(this);
+        mResults.setAdapter(mAdapter);
+        container .addView(mResults);
         mActionButton = new Button(this);
         mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,8 +112,6 @@ public class MainActivity extends Activity {
         container.addView(mActionButton, new ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT));
-        ListView results = new ListView(this);
-        container.addView(results);
         if (savedInstanceState == null) {
             mActionButtonPressed = false;
         } else {
@@ -99,6 +125,20 @@ public class MainActivity extends Activity {
         setActionButton();
         if (mActionButtonPressed) {
             doActionButton();
+        } else {
+            mResults.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mActionButtonPressed) {
+            mEditor.setVisibility(View.VISIBLE);
+            mResults.setVisibility(View.GONE);
+            mActionButtonPressed = false;
+            setActionButton();
+        } else {
+            super.onBackPressed();
         }
     }
 
