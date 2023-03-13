@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.RoundedCorner;
 import android.view.View;
 import android.view.ViewGroup;
@@ -134,6 +135,10 @@ public class MainActivity extends Activity {
         mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mEditor.setVisibility(View.VISIBLE);
+                mEditor.requestFocus();
+                mResults.setVisibility(View.GONE);
+                setActionButton();
                 doActionButton(!mActionButtonPressed);
             }
         });
@@ -182,6 +187,25 @@ public class MainActivity extends Activity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (   mActionButtonPressed
+               && (event.getAction() == KeyEvent.ACTION_DOWN)) {
+            int c = event.getUnicodeChar();
+            if (Character.isLetter(c)
+                || (c == ' ')
+                || (c == '?')
+                || (c == '/'))
+            {
+                mEditor.setVisibility(View.VISIBLE);
+                mEditor.requestFocus();
+                mResults.setVisibility(View.GONE);
+                mActionButtonPressed = false;
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override
