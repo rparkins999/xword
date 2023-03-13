@@ -25,8 +25,10 @@ public class MainActivity extends Activity {
 
     // Used to load the 'xword' library on application startup.
     static {
-        System.loadLibrary("xword");
+        System.loadLibrary("xwordsearch-jni");
     }
+
+    native void search(String s);
 
     MatchTextEditor mEditor;
     static final String EDITOR_CONTENT = "EditorContent";
@@ -36,10 +38,16 @@ public class MainActivity extends Activity {
     Boolean mActionButtonPressed;
     static final String ACTION_BUTTON_PRESSED = "ActionButtonPressed";
 
+    // Callback from JNI code, called for each match found
+    public void AddItem(String s) {
+        mAdapter.add(s);
+    }
+
     public void doActionButton() {
         if (mActionButtonPressed) {
             mEditor.setText("");
             mEditor.setVisibility(View.VISIBLE);
+            mEditor.requestFocus();
             mAdapter.clear();
             mResults.setVisibility(View.GONE);
             setActionButton();
@@ -47,7 +55,7 @@ public class MainActivity extends Activity {
             mEditor.setVisibility(View.GONE);
             mResults.setVisibility(View.VISIBLE);
             mActionButton.setText(getString(R.string.reset));
-            // do the search here
+            search(mEditor.getText().toString());
         }
         mActionButtonPressed = !mActionButtonPressed;
     }
@@ -148,10 +156,4 @@ public class MainActivity extends Activity {
         outState.putString(EDITOR_CONTENT, mEditor.getText().toString());
         outState.putBoolean(ACTION_BUTTON_PRESSED, mActionButtonPressed);
     }
-
-    /**
-     * A native method that is implemented by the 'xword' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
 }

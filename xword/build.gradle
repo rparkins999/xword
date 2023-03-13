@@ -69,6 +69,7 @@ android {
         debug {
             minifyEnabled false
             signingConfig signingConfigs.config
+            jniDebuggable true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             delete("build/intermediates/incremental/mergeDebugAssets/merger.xml")
             resValue("string", 'build_time',
