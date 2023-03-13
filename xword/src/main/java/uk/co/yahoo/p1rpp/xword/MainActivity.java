@@ -4,22 +4,21 @@
  */
 package uk.co.yahoo.p1rpp.xword;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.Display;
+import android.view.RoundedCorner;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TableLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-
-import uk.co.yahoo.p1rpp.xword.databinding.ActivityMainBinding;
 
 public class MainActivity extends Activity {
 
@@ -30,34 +29,61 @@ public class MainActivity extends Activity {
 
     native void search(String s);
 
+    Button mActionButton;
+    boolean mActionButtonPressed;
+    static final String ACTION_BUTTON_PRESSED = "ActionButtonPressed";
     MatchTextEditor mEditor;
     static final String EDITOR_CONTENT = "EditorContent";
+    static final String SELECTION_START = "SelectionStart";
+    static final String SELECTION_END = "SelectionEnd";
     ArrayAdapter<String> mAdapter;
     ListView mResults;
-    Button mActionButton;
-    Boolean mActionButtonPressed;
-    static final String ACTION_BUTTON_PRESSED = "ActionButtonPressed";
 
     // Callback from JNI code, called for each match found
     public void AddItem(String s) {
         mAdapter.add(s);
     }
 
-    public void doActionButton() {
-        if (mActionButtonPressed) {
-            mEditor.setText("");
-            mEditor.setVisibility(View.VISIBLE);
-            mEditor.requestFocus();
-            mAdapter.clear();
-            mResults.setVisibility(View.GONE);
-            setActionButton();
-        } else {
+    // Find out how much space to reserve for rounded corners
+    private int getCornerAllowance() {
+        int i = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Display disp = getDisplay();
+            RoundedCorner rc = disp.getRoundedCorner(
+                RoundedCorner.POSITION_BOTTOM_LEFT);
+            int j = rc.getRadius();
+            if (j > i) { i = j; }
+            rc = disp.getRoundedCorner(
+                RoundedCorner.POSITION_BOTTOM_RIGHT);
+            j = rc.getRadius();
+            if (j > i) { i = j; }
+            rc = disp.getRoundedCorner(
+                RoundedCorner.POSITION_TOP_LEFT);
+            j = rc.getRadius();
+            if (j > i) { i = j; }
+            rc = disp.getRoundedCorner(
+                RoundedCorner.POSITION_TOP_RIGHT);
+            j = rc.getRadius();
+            if (j > i) { i = j; }
+        }
+        return i;
+    }
+
+    public void doActionButton(boolean isNowPressed) {
+        if (isNowPressed) {
             mEditor.setVisibility(View.GONE);
             mResults.setVisibility(View.VISIBLE);
             mActionButton.setText(getString(R.string.reset));
+            mAdapter.clear();
             search(mEditor.getText().toString());
+        } else{
+            mEditor.setText("");
+            mEditor.setVisibility(View.VISIBLE);
+            mEditor.requestFocus();
+            mResults.setVisibility(View.GONE);
+            setActionButton();
         }
-        mActionButtonPressed = !mActionButtonPressed;
+        mActionButtonPressed = isNowPressed;
     }
 
     public void setActionButton() {
@@ -82,6 +108,7 @@ public class MainActivity extends Activity {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,38 +130,45 @@ public class MainActivity extends Activity {
             );
             container.addView(gitstamp);
         }
-        mEditor = new MatchTextEditor(this);
-        mEditor.setHint(R.string.texttomatch);
-        container.addView(mEditor);
-        mAdapter = new ArrayAdapter<String>(this, R.layout.resultitem);
-        mResults = new ListView(this);
-        mResults.setAdapter(mAdapter);
-        container .addView(mResults);
         mActionButton = new Button(this);
         mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                doActionButton();
+                doActionButton(!mActionButtonPressed);
             }
         });
         container.addView(mActionButton, new ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT));
+        mEditor = new MatchTextEditor(this);
+        mEditor.setHint(R.string.texttomatch);
+        mEditor.setHintTextColor(0x808080);
+        container.addView(mEditor);
+        mAdapter = new ArrayAdapter<>(this, R.layout.resultitem);
+        mResults = new ListView(this);
+        int p = getCornerAllowance() * 3 / 10;
+        mResults.setPadding(p, 0, p, p);
+        mResults.setAdapter(mAdapter);
+        container .addView(mResults);
         if (savedInstanceState == null) {
             mActionButtonPressed = false;
         } else {
             String editorContent = savedInstanceState.getString(EDITOR_CONTENT);
             if (editorContent != null) {
                 mEditor.setText(editorContent);
+                int i = savedInstanceState.getInt(SELECTION_START);
+                int j = savedInstanceState.getInt(SELECTION_END);
+                mEditor.setSelection(i, j);
             }
             mActionButtonPressed =
                 savedInstanceState.getBoolean(ACTION_BUTTON_PRESSED);
         }
         setActionButton();
         if (mActionButtonPressed) {
-            doActionButton();
+            doActionButton(mActionButtonPressed);
         } else {
             mResults.setVisibility(View.GONE);
+            mEditor.requestFocus();
         }
     }
 
@@ -154,6 +188,8 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(EDITOR_CONTENT, mEditor.getText().toString());
+        outState.putInt(SELECTION_START, mEditor.getSelectionStart());
+        outState.putInt(SELECTION_END, mEditor.getSelectionEnd());
         outState.putBoolean(ACTION_BUTTON_PRESSED, mActionButtonPressed);
     }
 }

@@ -37,7 +37,7 @@ public class MatchTextEditor extends EditText {
                 else if (c == '\n')
                 {
                     ssb.replace(i, end, "");
-                    ((MainActivity)mContext).doActionButton();
+                    hitReturn();
                 }
                 else
                 {
@@ -73,6 +73,12 @@ public class MatchTextEditor extends EditText {
         super(context);
         mContext = context;
         createExtras();
+    }
+
+    protected void hitReturn() {
+        if (length() > 0) {
+            ((MainActivity) mContext).doActionButton(true);
+        }
     }
 
     @Override
