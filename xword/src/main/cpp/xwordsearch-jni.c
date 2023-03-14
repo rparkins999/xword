@@ -128,7 +128,7 @@ void testmatch(const char * test, const char * word, int len)
 }
 
 void Java_uk_co_yahoo_p1rpp_xword_MainActivity_search(
-    JNIEnv* envp, jobject thizp, jstring match)
+    JNIEnv* envp, jobject thizp, jstring match, jint dictnum)
 {
     env = envp;
     thiz = thizp;
@@ -185,8 +185,24 @@ void Java_uk_co_yahoo_p1rpp_xword_MainActivity_search(
     char test[MAXLEN];
 
     /* search dictionary */
-    const unsigned int * d = dict;
-    const unsigned int * de = dict + sizeof(dict) / sizeof(*dict);
+    const unsigned int * d;
+    const unsigned int * de;
+    switch(dictnum) {
+        default:
+            d = dict;
+            de = dict + sizeof(dict) / sizeof(*dict);
+            break;
+        case 1:
+            d = scrabbleUKwords;
+            de = scrabbleUKwords
+                    + sizeof(scrabbleUKwords) / sizeof(*scrabbleUKwords);
+            break;
+        case 2:
+            d = scrabbleUSwords;
+            de = scrabbleUSwords
+                    + sizeof(scrabbleUSwords) / sizeof(*scrabbleUSwords);
+            break;
+    }
     while (d < de)
     {
         unsigned int w1 = *d++;

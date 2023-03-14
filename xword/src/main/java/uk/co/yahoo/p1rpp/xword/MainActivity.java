@@ -13,23 +13,30 @@ import android.view.KeyEvent;
 import android.view.RoundedCorner;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity
+    implements AdapterView.OnItemSelectedListener
+{
 
     // Used to load the 'xword' library on application startup.
     static {
         System.loadLibrary("xwordsearch-jni");
     }
 
-    native void search(String s);
+    native void search(String s, int i);
 
+    Spinner mDictSelector;
+    int mSelectedDictionary;
+    static final String SELECTEDDICTIONARY = "SelectedDictionary";
     Button mActionButton;
     boolean mActionButtonPressed;
     static final String ACTION_BUTTON_PRESSED = "ActionButtonPressed";
@@ -39,6 +46,16 @@ public class MainActivity extends Activity {
     static final String SELECTION_END = "SelectionEnd";
     ArrayAdapter<String> mAdapter;
     ListView mResults;
+
+    @Override
+    public void onItemSelected(
+        AdapterView<?> parent, View view, int position, long id)
+    {
+        mSelectedDictionary = position;
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {}
 
     // Callback from JNI code, called for each match found
     public void AddItem(String s) {
@@ -76,7 +93,7 @@ public class MainActivity extends Activity {
             mResults.setVisibility(View.VISIBLE);
             mActionButton.setText(getString(R.string.reset));
             mAdapter.clear();
-            search(mEditor.getText().toString());
+            search(mEditor.getText().toString(), mSelectedDictionary);
         } else{
             mEditor.setText("");
             mEditor.setVisibility(View.VISIBLE);
@@ -131,6 +148,17 @@ public class MainActivity extends Activity {
             );
             container.addView(gitstamp);
         }
+        LinearLayout ll = new LinearLayout(this);
+        TextView tv = new TextView(this);
+        tv.setText(R.string.choosedict);
+        ll.addView(tv);
+        mDictSelector = new Spinner(this);
+        ArrayAdapter<CharSequence> ad = ArrayAdapter.createFromResource(
+            this, R.array.dictionaries, R.layout.resultitem);
+        ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mDictSelector.setAdapter(ad);
+        ll.addView(mDictSelector);
+        container.addView(ll);
         mActionButton = new Button(this);
         mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -157,7 +185,10 @@ public class MainActivity extends Activity {
         container .addView(mResults);
         if (savedInstanceState == null) {
             mActionButtonPressed = false;
+            mSelectedDictionary = 0;
         } else {
+            mSelectedDictionary =
+                savedInstanceState.getInt(SELECTEDDICTIONARY, 0);
             String editorContent = savedInstanceState.getString(EDITOR_CONTENT);
             if (editorContent != null) {
                 mEditor.setText(editorContent);
@@ -168,6 +199,8 @@ public class MainActivity extends Activity {
             mActionButtonPressed =
                 savedInstanceState.getBoolean(ACTION_BUTTON_PRESSED);
         }
+        mDictSelector.setSelection(mSelectedDictionary);
+        mDictSelector.setOnItemSelectedListener(this);
         setActionButton();
         if (mActionButtonPressed) {
             doActionButton(mActionButtonPressed);
@@ -211,6 +244,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
+        outState.putInt(SELECTEDDICTIONARY, mSelectedDictionary);
         outState.putString(EDITOR_CONTENT, mEditor.getText().toString());
         outState.putInt(SELECTION_START, mEditor.getSelectionStart());
         outState.putInt(SELECTION_END, mEditor.getSelectionEnd());

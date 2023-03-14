@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="dictionaries">
+        <item>@string/mydict</item>
+        <item>@string/uk_scrabble</item>
+        <item>@string/us_scrabble</item>
+    </string-array>
+</resources>

@@ -19,7 +19,7 @@ add_custom_command(OUTPUT ${NATIVEDIR}/makedict
 add_custom_command(OUTPUT ${NATIVEDIR}/xworddict.h
 		WORKING_DIRECTORY ${NATIVEDIR}
 		COMMAND ${NATIVEDIR}/makedict
-		DEPENDS ${NATIVEDIR}/makedict ${NATIVEDIR}/words)
+		DEPENDS ${NATIVEDIR}/makedict ${NATIVEDIR}/words ${NATIVEDIR}/sowpods-ScrabbleUKwords ${NATIVEDIR}/twl06-ScrabbleUSwords)
 
 add_library(xwordsearch-jni SHARED
 		${NATIVEDIR}/xwordsearch-jni.c
