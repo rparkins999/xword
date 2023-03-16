@@ -55,11 +55,12 @@ int suffcounts[700000];
  * in subsequent words of an entry (if they exist) the bottom 2 bits are unused
  */
 
+int maxlen = 0;
+
 void onedict(int fd, int fdout, char * arrayname) {
     int nb = 0;
     int nw = 0;
     int nsuff = 0;
-    int maxlen = 0;
     int n32 = 0;
     char buff[1024];
     words[nw] = bytes;
@@ -69,7 +70,9 @@ void onedict(int fd, int fdout, char * arrayname) {
         {
             bytes[nb++] = 0;
             int l = strlen(words[nw]);
-            if (l > maxlen) maxlen = l;
+            if (l > maxlen) {
+                maxlen = l;
+            }
             words[++nw] = bytes + nb;
         }
         else if ((bytes[nb] >= 'A') && (bytes[nb] <= 'Z'))
@@ -87,7 +90,7 @@ void onedict(int fd, int fdout, char * arrayname) {
     }
     fprintf(stderr, "%d bytes, %d words, average length %g\n", nb-nw, nw, (nb-nw)/(float)nw);
     int err = write(fdout, buff, snprintf(buff, sizeof(buff),
-                    "#define MAXLEN %d\nunsigned int %s[] = {\n", maxlen, arrayname));
+                    "unsigned int %s[] = {\n", arrayname));
     if (err < 0)
     {
         fprintf(stderr,
@@ -346,6 +349,7 @@ void onedict(int fd, int fdout, char * arrayname) {
 
 int main (int argc __attribute__ ((unused)), char argv[] __attribute__ ((unused)))
 {
+    char buff[1024];
     int fdout = creat("xworddict.h", 0744);
     if (fdout < 0)
     {
@@ -390,6 +394,15 @@ int main (int argc __attribute__ ((unused)), char argv[] __attribute__ ((unused)
     if (fd < 0)
     {
         fprintf(stderr, "close(\"sowpods-ScrabbleUKwords\") -> %s\n", strerror(errno));
+        exit(1);
+    }
+    int err = write(fdout, buff, snprintf(buff, sizeof(buff),
+                                          "#define MAXLEN %d\n", maxlen));
+    if (err < 0)
+    {
+        fprintf(stderr,
+                "write(\"xworddict.h\", \"#define MAXLEN %d\n -> %s\n",
+                maxlen, strerror(errno));
         exit(1);
     }
     return 0;
