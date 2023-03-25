@@ -1,5 +1,6 @@
 # xword
-dictionary / crossword utility
+<b>dictionary / crossword utility</b>
+
 This is a little dictionary search app. The UI is in Java,
 but the actual search is done in native code to make it faster.
 
