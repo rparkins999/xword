@@ -1,4 +1,11 @@
-/* Copyright 2008 Richard P. Parkins, M. A. */
+/*
+ * Copyright © 2023. Richard P. Parkins, M. A.
+ * Released under GPL V3 or later
+ *
+ * This compresses the dictionaries and makes a header file
+ * declaring the arrays containing the compressed versions
+ * which is then included by xwordsearch-jni.c
+ */
 
 #include <unistd.h>
 #include <stdio.h>

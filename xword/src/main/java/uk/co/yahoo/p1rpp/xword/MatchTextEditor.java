@@ -14,44 +14,41 @@ import android.text.method.ArrowKeyMovementMethod;
 import android.util.AttributeSet;
 import android.widget.EditText;
 
+// test string editor
 @SuppressLint("AppCompatCustomView")
 public class MatchTextEditor extends EditText {
-    Context mContext;
+    final Context mContext;
 
-    private class MatchFilter implements InputFilter {
-        public CharSequence filter(CharSequence source, int start, int end,
-                                   Spanned dest, int dstart, int dend) {
-            SpannableStringBuilder ssb = new SpannableStringBuilder(source);
-            for (int i = start; i < end; i++) {
-                char c = ssb.charAt(i);
-                if (Character.isLowerCase(c)) {
-                    // OK as is
-                }
-                else if (Character.isUpperCase(c)) {
-                    StringBuilder s = new StringBuilder(Character.toLowerCase(c));
-                    ssb.replace(i, i + 1, s);
-                }
-                else if ((c == '?') || (c == '/') || (c == ' ')) {
-                    ssb.replace(i, i + 1, "?");
-                }
-                else if (c == '\n')
-                {
-                    ssb.replace(i, end, "");
-                    hitReturn();
-                }
-                else
-                {
-                    // not wanted, remove it
-                    ssb.replace(i, i + 1, "");
-                }
-            }
-            return ssb;
-        }
-    }
-
+    // common initialisation for all constructor variants
     private void createExtras()
     {
-        setFilters(new InputFilter[] { new MatchFilter() });
+        // create an input character filter
+        setFilters(new InputFilter[]
+            { new InputFilter() {
+                public CharSequence filter(CharSequence source, int start, int end,
+                                           Spanned dest, int dstart, int dend)
+                {
+                    // we only want letters which we force to lower case
+                    // and space / ? which are all mapped to ?
+                    // backspace and delete keys aren't passed to this filter
+                    // but handled directly by our EditText superclass
+                    SpannableStringBuilder ssb = new SpannableStringBuilder(source);
+                    for (int i = start; i < end; i++) {
+                        char c = ssb.charAt(i);
+                        if (Character.isUpperCase(c)) {
+                            StringBuilder s = new StringBuilder(Character.toLowerCase(c));
+                            ssb.replace(i, i + 1, s);
+                        } else if ((c == '?') || (c == '/') || (c == ' ')) {
+                            ssb.replace(i, i + 1, "?");
+                        } else if (!Character.isLowerCase(c) /* OK as is */) {
+                            // not wanted, remove it
+                            ssb.replace(i, i + 1, "");
+                        }
+                    }
+                    return ssb;
+                }
+            }
+        });
         setRawInputType(InputType.TYPE_CLASS_TEXT
             | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         setMovementMethod (ArrowKeyMovementMethod.getInstance());
@@ -75,12 +72,9 @@ public class MatchTextEditor extends EditText {
         createExtras();
     }
 
-    protected void hitReturn() {
-        if (length() > 0) {
-            ((MainActivity) mContext).doActionButton(true);
-        }
-    }
-
+    // this gets called after a text change
+    // the action button may need to be updated
+    // so we call the MainActivity to do that
     @Override
     protected void onTextChanged(CharSequence text, int start,
                                  int lengthBefore, int lengthAfter) {

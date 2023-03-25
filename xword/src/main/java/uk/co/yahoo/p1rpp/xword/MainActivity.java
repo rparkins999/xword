@@ -1,6 +1,18 @@
 /*
  * Copyright © 2023. Richard P. Parkins, M. A.
  * Released under GPL V3 or later
+ *
+ * This is a little dictionary search app. The UI is in Java,
+ * but the actual search is done in native code to make it faster.
+ *
+ * It can find anagrams or words which match a pattern,
+ * and incidentally it can tell if a word is in its dictionary.
+ *
+ * I originally wrote it to help me solve crosswords,
+ * but it can also be used to help set crosswords.
+ *
+ * It has the British and American Scrabble™ dictionaries,
+ * so it can also be used to check if a word is allowed in that game.
  */
 package uk.co.yahoo.p1rpp.xword;
 
@@ -26,27 +38,49 @@ import androidx.annotation.NonNull;
 public class MainActivity extends Activity
     implements AdapterView.OnItemSelectedListener
 {
-
     // Used to load the 'xword' library on application startup.
     static {
         System.loadLibrary("xwordsearch-jni");
     }
 
+    // this declares the native code dictionary search function
     native void search(String s, int i);
 
+    // this spinner allows selection of which distionary to use
     Spinner mDictSelector;
     int mSelectedDictionary;
     static final String SELECTEDDICTIONARY = "SelectedDictionary";
+
+    // button to do actions
+    // if we are displaying the list of matches,
+    // this button is labelled RESET and goes back to
+    // an empty test string
+    // if we are displaying a test string containing ?'s
+    // this button is labelled MATCH and searches for pattern matches
+    // with the usual convention that ? matches any letter
+    // if we are displaying a test string containing only letters
+    // this button is labelled ANAGRAM and searches for anagrams
+    // if we are displaying an mepty test string
+    // this button isn't shown
     Button mActionButton;
-    boolean mActionButtonPressed;
+    boolean mShowingResults;
     static final String ACTION_BUTTON_PRESSED = "ActionButtonPressed";
+
+    // this is the test string editor, subclassed from EditText
     MatchTextEditor mEditor;
     static final String EDITOR_CONTENT = "EditorContent";
     static final String SELECTION_START = "SelectionStart";
     static final String SELECTION_END = "SelectionEnd";
+
+    // this is the adapter for the ListView
+    // which displays the list of matches
     ArrayAdapter<String> mAdapter;
     ListView mResults;
 
+    // prevent redundant Enter key actions
+    boolean enterKeyDown;
+
+    // this is called when a dictionary is selected from the spinner
     @Override
     public void onItemSelected(
         AdapterView<?> parent, View view, int position, long id)
@@ -54,19 +88,28 @@ public class MainActivity extends Activity
         mSelectedDictionary = position;
     }
 
+    // this is called when nothing is selected from the spinner
+    // it should never happen, but the interface requires it
     @Override
     public void onNothingSelected(AdapterView<?> parent) {}
 
-    // Callback from JNI code, called for each match found
+    // callback from JNI code, called for each match found
+    // we just append it to the list of matches
     public void AddItem(String s) {
         mAdapter.add(s);
     }
 
-    // Find out how much space to reserve for rounded corners
+    // this is for a display with rounded corners
+    // we don't want a bit of the scrolling ListView to be cut off
+    // so if the display has rounded corners
+    // we set the padding of the ListView to inset it a bit
     private int getCornerAllowance() {
+        // return 0 if this Android version doesn't do rounded corners
         int i = 0;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Display disp = getDisplay();
+            // the corner radii are normally all the same
+            // but we find the largert one just in case
             RoundedCorner rc = disp.getRoundedCorner(
                 RoundedCorner.POSITION_BOTTOM_LEFT);
             int j = rc.getRadius();
@@ -87,24 +130,30 @@ public class MainActivity extends Activity
         return i;
     }
 
-    public void doActionButton(boolean isNowPressed) {
-        if (isNowPressed) {
+    // this is called when the action button is pressed
+    // and also during initialisation to set its state
+    public void doActionButton(boolean showingResults) {
+        if (showingResults) {
             mEditor.setVisibility(View.GONE);
-            mResults.setVisibility(View.VISIBLE);
             mActionButton.setText(getString(R.string.reset));
             mAdapter.clear();
+            mResults.setVisibility(View.VISIBLE);
+            // This is needed if the screen was rotated
+            // to prevent Android from setting the focus on the button
+            findViewById(R.id.container).requestFocus();
             search(mEditor.getText().toString(), mSelectedDictionary);
         } else{
             mEditor.setText("");
             mEditor.setVisibility(View.VISIBLE);
-            mEditor.requestFocus();
-            mResults.setVisibility(View.GONE);
             setActionButton();
+            mResults.setVisibility(View.GONE);
         }
-        mActionButtonPressed = isNowPressed;
+        mShowingResults = showingResults;
     }
 
+    // this is called to set the label on the action button
     public void setActionButton() {
+        // get the test sttring
         String editorContent = mEditor.getText().toString();
         if (editorContent.length() > 0)
         {
@@ -126,12 +175,18 @@ public class MainActivity extends Activity
         }
     }
 
+    // called when this class is created
+    // if savedInstanceState is not null, we are being restarted
+    // either because the screen was rotated
+    // or because another app has been running in front of this one
+    // and has now exited
     @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         LinearLayout container = findViewById(R.id.container);
+        // display version onformation
         String versionInfo = getString(R.string.app_name) +
             " version " + BuildConfig.VERSION_NAME +
             " built " + getString(R.string.build_time);
@@ -148,45 +203,56 @@ public class MainActivity extends Activity
             );
             container.addView(gitstamp);
         }
+        // display the dictionary choice spinner
+        // default layout direction is horizontal
         LinearLayout ll = new LinearLayout(this);
+        // label
         TextView tv = new TextView(this);
         tv.setText(R.string.choosedict);
         ll.addView(tv);
+        // the spinner itself
         mDictSelector = new Spinner(this);
         ArrayAdapter<CharSequence> ad = ArrayAdapter.createFromResource(
             this, R.array.dictionaries, R.layout.resultitem);
         ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDictSelector.setAdapter(ad);
+        mDictSelector.setFocusable(false);
         ll.addView(mDictSelector);
         container.addView(ll);
+        // display the action button
         mActionButton = new Button(this);
         mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mEditor.setVisibility(View.VISIBLE);
-                mEditor.requestFocus();
-                mResults.setVisibility(View.GONE);
-                setActionButton();
-                doActionButton(!mActionButtonPressed);
+                // pressing it flips between the test string input mode
+                // and the match list diplay mode
+                doActionButton(!mShowingResults);
             }
         });
         container.addView(mActionButton, new ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT));
+        // display the test string editor
+        // it will later be made invisible if we are in match list diplay mode
         mEditor = new MatchTextEditor(this);
         mEditor.setHint(R.string.texttomatch);
         mEditor.setHintTextColor(0x808080);
         container.addView(mEditor);
+        // display the match list
+        // it will later be made invisible if se are in test string input mode
         mAdapter = new ArrayAdapter<>(this, R.layout.resultitem);
         mResults = new ListView(this);
         int p = getCornerAllowance() * 3 / 10;
         mResults.setPadding(p, 0, p, p);
         mResults.setAdapter(mAdapter);
+        mResults.setFocusable(false);
         container .addView(mResults);
         if (savedInstanceState == null) {
-            mActionButtonPressed = false;
-            mSelectedDictionary = 0;
+            // we just atarted the app
+            mShowingResults = false; // in test string input mode
+            mSelectedDictionary = 0; // initial dictionary is "words"
         } else {
+            // recover state from savedInstanceState
             mSelectedDictionary =
                 savedInstanceState.getInt(SELECTEDDICTIONARY, 0);
             String editorContent = savedInstanceState.getString(EDITOR_CONTENT);
@@ -196,26 +262,34 @@ public class MainActivity extends Activity
                 int j = savedInstanceState.getInt(SELECTION_END);
                 mEditor.setSelection(i, j);
             }
-            mActionButtonPressed =
+            mShowingResults =
                 savedInstanceState.getBoolean(ACTION_BUTTON_PRESSED);
         }
         mDictSelector.setSelection(mSelectedDictionary);
         mDictSelector.setOnItemSelectedListener(this);
         setActionButton();
-        if (mActionButtonPressed) {
-            doActionButton(mActionButtonPressed);
+        if (mShowingResults) {
+            // the match list can be big
+            // so we recreate it instead of saving and restoring it
+            doActionButton(true);
         } else {
+            // in test string input mode, don't show results list
             mResults.setVisibility(View.GONE);
-            mEditor.requestFocus();
         }
+        enterKeyDown = false;
     }
 
+    // handle back button pressed
+    // if we are showing the resulst list
+    // we go back to an empty test string
+    // if we are showing the test string
+    // we do the mormal action which is to exit
     @Override
     public void onBackPressed() {
-        if (mActionButtonPressed) {
+        if (mShowingResults) {
             mEditor.setVisibility(View.VISIBLE);
             mResults.setVisibility(View.GONE);
-            mActionButtonPressed = false;
+            mShowingResults = false;
             setActionButton();
         } else {
             super.onBackPressed();
@@ -223,24 +297,69 @@ public class MainActivity extends Activity
     }
 
     @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+    }
+
+    // this gets called if any key is pressed on the hardware keyboard
+    // and if the done or enter button is pressed on the software keboard
+    // but not if any other key is pressed on the software keyboard
+    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (   mActionButtonPressed
-               && (event.getAction() == KeyEvent.ACTION_DOWN)) {
-            int c = event.getUnicodeChar();
-            if (Character.isLetter(c)
+        int c = event.getUnicodeChar();
+        if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+            // we get KEYCODE_ENTER from both hardware and software keyboards
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                // key down, remember we've seen it and wait for key up
+                enterKeyDown = true;
+            // ignore a redundant key up
+            } else if (   enterKeyDown
+                       && (event.getAction() == KeyEvent.ACTION_UP))
+            {
+                // key up after key doen
+                enterKeyDown = false;
+                if (mShowingResults) {
+                    // go back to text entry
+                    doActionButton(false);
+                } else {
+                    if (mEditor.getText().toString().length() == 0)
+                    {
+                        // if no text has been entered, quit
+                        finish();
+                    } else {
+                        // search for match
+                        doActionButton(true);
+                    }
+                }
+            }
+            return true; // we've dealt with it
+        } else if (mShowingResults) {
+            // if we are displaying the match list
+            // and we get a valid character from a hardware keyboard
+            // (on-screen keyboard can't be active)
+            // go back to the test string input mode
+            // and pass the character to it
+            if (   Character.isLetter(c)
                 || (c == ' ')
                 || (c == '?')
-                || (c == '/'))
+                || (c == '/')
+                || (event.getKeyCode() == KeyEvent.KEYCODE_DEL)
+                || (event.getKeyCode() == KeyEvent.KEYCODE_FORWARD_DEL))
             {
-                mEditor.setVisibility(View.VISIBLE);
-                mEditor.requestFocus();
-                mResults.setVisibility(View.GONE);
-                mActionButtonPressed = false;
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                    mResults.setVisibility(View.GONE);
+                    mShowingResults = false;
+                    mEditor.setVisibility(View.VISIBLE);
+                }
             }
+            // pass it directly to the MatchTextEditor
+            // (avoids problem if screen has been rotated)
+            return mEditor.dispatchKeyEvent(event);
         }
         return super.dispatchKeyEvent(event);
     }
 
+    // save state if this class gets put to sleep
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -248,6 +367,6 @@ public class MainActivity extends Activity
         outState.putString(EDITOR_CONTENT, mEditor.getText().toString());
         outState.putInt(SELECTION_START, mEditor.getSelectionStart());
         outState.putInt(SELECTION_END, mEditor.getSelectionEnd());
-        outState.putBoolean(ACTION_BUTTON_PRESSED, mActionButtonPressed);
+        outState.putBoolean(ACTION_BUTTON_PRESSED, mShowingResults);
     }
 }
