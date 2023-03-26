@@ -1,7 +1,7 @@
 # xword
 <b>dictionary / crossword utility</b>
 
-This is version 1.0.
+This is version 1.1.
 
 This is a little dictionary search app. The UI is in Java,
 but the actual search is done in native code to make it faster.

@@ -301,13 +301,18 @@ public class MainActivity extends Activity
         super.onWindowFocusChanged(hasFocus);
     }
 
-    // this gets called if any key is pressed on the hardware keyboard
-    // and if the done or enter button is pressed on the software keboard
+    // this gets called if teh back button is pressed
+    // and if any key is pressed on the hardware keyboard
+    // and if the done or enter button is pressed on the software keyboard
     // but not if any other key is pressed on the software keyboard
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int c = event.getUnicodeChar();
-        if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+        int keycode = event.getKeyCode();
+        if (keycode == KeyEvent.KEYCODE_BACK) {
+            return super.dispatchKeyEvent(event);
+        }
+        if (keycode == KeyEvent.KEYCODE_ENTER) {
             // we get KEYCODE_ENTER from both hardware and software keyboards
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 // key down, remember we've seen it and wait for key up
@@ -343,10 +348,10 @@ public class MainActivity extends Activity
                 || (c == ' ')
                 || (c == '?')
                 || (c == '/')
-                || (event.getKeyCode() == KeyEvent.KEYCODE_DEL)
-                || (event.getKeyCode() == KeyEvent.KEYCODE_FORWARD_DEL))
+                || (keycode == KeyEvent.KEYCODE_DEL)
+                || (keycode == KeyEvent.KEYCODE_FORWARD_DEL))
             {
-                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (keycode == KeyEvent.ACTION_DOWN) {
                     mResults.setVisibility(View.GONE);
                     mShowingResults = false;
                     mEditor.setVisibility(View.VISIBLE);
