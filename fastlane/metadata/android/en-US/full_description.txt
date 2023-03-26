@@ -1,0 +1,8 @@
+<i>xword</i> searches a dictionary for words that match a pattern or are anagrams of a set of letters.
+
+<br><b>Features:</b>
+
+* No Ads.
+* No requests for donations or in-app purchases.
+* US and UK Scrabble™ dictionaries
+* Useful for crossword solvers and setters
