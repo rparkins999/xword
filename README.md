@@ -17,6 +17,8 @@ so it can also be used to check if a word is allowed in that game.
 
 No permissions required.
 
+Requires ```cmake``` to build.
+
 It should work on Android 7.0 API 24 or later.
 
 Licensed under GPl v3 or later.
