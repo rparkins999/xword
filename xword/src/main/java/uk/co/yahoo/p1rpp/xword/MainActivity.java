@@ -18,6 +18,7 @@ package uk.co.yahoo.p1rpp.xword;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
@@ -25,6 +26,7 @@ import android.view.KeyEvent;
 import android.view.RoundedCorner;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -50,6 +52,7 @@ public class MainActivity extends Activity
     Spinner mDictSelector;
     int mSelectedDictionary;
     static final String SELECTEDDICTIONARY = "SelectedDictionary";
+    static final String SHOWING_HINT = "ShowingHint";
 
     // button to do actions
     // if we are displaying the list of matches,
@@ -92,6 +95,13 @@ public class MainActivity extends Activity
     // it should never happen, but the interface requires it
     @Override
     public void onNothingSelected(AdapterView<?> parent) {}
+
+    private void focusEditor() {
+        mEditor.requestFocus();
+        InputMethodManager imm =
+            (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(mEditor, InputMethodManager.SHOW_IMPLICIT);
+    }
 
     // callback from JNI code, called for each match found
     // we just append it to the list of matches
@@ -145,6 +155,7 @@ public class MainActivity extends Activity
         } else{
             mEditor.setText("");
             mEditor.setVisibility(View.VISIBLE);
+            focusEditor();
             setActionButton();
             mResults.setVisibility(View.GONE);
         }
@@ -155,7 +166,8 @@ public class MainActivity extends Activity
     public void setActionButton() {
         // get the test sttring
         String editorContent = mEditor.getText().toString();
-        if (editorContent.length() > 0)
+        if (   (!mEditor.mShowingHint)
+            && (editorContent.length() > 0))
         {
             if (editorContent.contains("?"))
             {
@@ -235,18 +247,6 @@ public class MainActivity extends Activity
         // display the test string editor
         // it will later be made invisible if we are in match list diplay mode
         mEditor = new MatchTextEditor(this);
-        mEditor.setHint(R.string.texttomatch);
-        mEditor.setHintTextColor(0x808080);
-        container.addView(mEditor);
-        // display the match list
-        // it will later be made invisible if se are in test string input mode
-        mAdapter = new ArrayAdapter<>(this, R.layout.resultitem);
-        mResults = new ListView(this);
-        int p = getCornerAllowance() * 3 / 10;
-        mResults.setPadding(p, 0, p, p);
-        mResults.setAdapter(mAdapter);
-        mResults.setFocusable(false);
-        container .addView(mResults);
         if (savedInstanceState == null) {
             // we just atarted the app
             mShowingResults = false; // in test string input mode
@@ -264,7 +264,20 @@ public class MainActivity extends Activity
             }
             mShowingResults =
                 savedInstanceState.getBoolean(ACTION_BUTTON_PRESSED);
+            mEditor.mShowingHint =
+                savedInstanceState.getBoolean(SHOWING_HINT);
         }
+        mEditor.createExtras();
+        container.addView(mEditor);
+        // display the match list
+        // it will later be made invisible if se are in test string input mode
+        mAdapter = new ArrayAdapter<>(this, R.layout.resultitem);
+        mResults = new ListView(this);
+        int p = getCornerAllowance() * 3 / 10;
+        mResults.setPadding(p, 0, p, p);
+        mResults.setAdapter(mAdapter);
+        mResults.setFocusable(false);
+        container .addView(mResults);
         mDictSelector.setSelection(mSelectedDictionary);
         mDictSelector.setOnItemSelectedListener(this);
         setActionButton();
@@ -275,6 +288,7 @@ public class MainActivity extends Activity
         } else {
             // in test string input mode, don't show results list
             mResults.setVisibility(View.GONE);
+            focusEditor();
         }
         enterKeyDown = false;
     }
@@ -287,21 +301,17 @@ public class MainActivity extends Activity
     @Override
     public void onBackPressed() {
         if (mShowingResults) {
-            mEditor.setVisibility(View.VISIBLE);
             mResults.setVisibility(View.GONE);
             mShowingResults = false;
             setActionButton();
+            mEditor.setVisibility(View.VISIBLE);
+            focusEditor();
         } else {
             super.onBackPressed();
         }
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-    }
-
-    // this gets called if teh back button is pressed
+    // this gets called if the back button is pressed
     // and if any key is pressed on the hardware keyboard
     // and if the done or enter button is pressed on the software keyboard
     // but not if any other key is pressed on the software keyboard
@@ -327,7 +337,7 @@ public class MainActivity extends Activity
                     // go back to text entry
                     doActionButton(false);
                 } else {
-                    if (mEditor.getText().toString().length() == 0)
+                    if (mEditor.mShowingHint)
                     {
                         // if no text has been entered, quit
                         finish();
@@ -337,7 +347,8 @@ public class MainActivity extends Activity
                     }
                 }
             }
-            return true; // we've dealt with it
+// Ok for HW keyboard            return true; // we've dealt with it
+            return mEditor.dispatchKeyEvent(event);
         } else if (mShowingResults) {
             // if we are displaying the match list
             // and we get a valid character from a hardware keyboard
@@ -364,14 +375,17 @@ public class MainActivity extends Activity
         return super.dispatchKeyEvent(event);
     }
 
+
+
     // save state if this class gets put to sleep
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(SELECTEDDICTIONARY, mSelectedDictionary);
+        outState.putBoolean(SHOWING_HINT, mEditor.mShowingHint);
+        outState.putBoolean(ACTION_BUTTON_PRESSED, mShowingResults);
         outState.putString(EDITOR_CONTENT, mEditor.getText().toString());
         outState.putInt(SELECTION_START, mEditor.getSelectionStart());
         outState.putInt(SELECTION_END, mEditor.getSelectionEnd());
-        outState.putBoolean(ACTION_BUTTON_PRESSED, mShowingResults);
     }
 }
