@@ -18,7 +18,6 @@ package uk.co.yahoo.p1rpp.xword;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
@@ -26,7 +25,6 @@ import android.view.KeyEvent;
 import android.view.RoundedCorner;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -97,10 +95,11 @@ public class MainActivity extends Activity
     public void onNothingSelected(AdapterView<?> parent) {}
 
     private void focusEditor() {
+/* this doesn't seem to work */
+//        InputMethodManager imm =
+//            (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+//        imm.showSoftInput(mEditor, InputMethodManager.SHOW_FORCED);
         mEditor.requestFocus();
-        InputMethodManager imm =
-            (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.showSoftInput(mEditor, InputMethodManager.SHOW_IMPLICIT);
     }
 
     // callback from JNI code, called for each match found
@@ -362,10 +361,12 @@ public class MainActivity extends Activity
                 || (keycode == KeyEvent.KEYCODE_DEL)
                 || (keycode == KeyEvent.KEYCODE_FORWARD_DEL))
             {
-                if (keycode == KeyEvent.ACTION_DOWN) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
                     mResults.setVisibility(View.GONE);
                     mShowingResults = false;
+                    setActionButton();
                     mEditor.setVisibility(View.VISIBLE);
+                    focusEditor();
                 }
             }
             // pass it directly to the MatchTextEditor
