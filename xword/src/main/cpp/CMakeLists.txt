@@ -10,20 +10,19 @@ cmake_minimum_required(VERSION 3.22.1)
 # Declares and names the project.
 project("xword")
 
-set(NATIVEDIR "/home/rparkins/Documents/Android/xword/xword/src/main/cpp")
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_custom_command(OUTPUT ${NATIVEDIR}/makedict
-		COMMAND gcc ${NATIVEDIR}/makedict.c -o ${NATIVEDIR}/makedict
-		DEPENDS ${NATIVEDIR}/makedict.c)
+add_custom_command(OUTPUT makedict
+		COMMAND gcc ${CMAKE_CURRENT_SOURCE_DIR}/makedict.c -o makedict
+		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/makedict.c)
 
-add_custom_command(OUTPUT ${NATIVEDIR}/xworddict.h
-		WORKING_DIRECTORY ${NATIVEDIR}
-		COMMAND ${NATIVEDIR}/makedict
-		DEPENDS ${NATIVEDIR}/makedict ${NATIVEDIR}/words ${NATIVEDIR}/sowpods-ScrabbleUKwords ${NATIVEDIR}/twl06-ScrabbleUSwords)
+add_custom_command(OUTPUT ./xworddict.h
+		COMMAND ./makedict ${CMAKE_CURRENT_SOURCE_DIR}/words dict ${CMAKE_CURRENT_SOURCE_DIR}/sowpods-ScrabbleUKwords scrabbleUKwords ${CMAKE_CURRENT_SOURCE_DIR}/twl06-ScrabbleUSwords scrabbleUSwords
+		DEPENDS ./makedict ${CMAKE_CURRENT_SOURCE_DIR}/words ${CMAKE_CURRENT_SOURCE_DIR}/sowpods-ScrabbleUKwords ${CMAKE_CURRENT_SOURCE_DIR}/twl06-ScrabbleUSwords )
 
 add_library(xwordsearch-jni SHARED
-		${NATIVEDIR}/xwordsearch-jni.c
-		${NATIVEDIR}/xworddict.h)
+		xwordsearch-jni.c
+		./xworddict.h)
 
 # include libraries needed
 target_link_libraries(xwordsearch-jni)

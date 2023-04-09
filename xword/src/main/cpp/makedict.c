@@ -354,54 +354,27 @@ void onedict(int fd, int fdout, char * arrayname) {
 #endif
 }
 
-int main (int argc __attribute__ ((unused)), char argv[] __attribute__ ((unused)))
-{
+int main (int argc, char *argv[]) {
     char buff[1024];
+    int i;
     int fdout = creat("xworddict.h", 0744);
-    if (fdout < 0)
-    {
+    if (fdout < 0) {
         fprintf(stderr, "creat(\"xworddict.h\", 0744) -> %s\n", strerror(errno));
         exit(1);
     }
-    int fd = open("words", O_RDONLY);
-    if (fd < 0)
-    {
-        fprintf(stderr, "open(\"words\", O_RDONLY) -> %s\n", strerror(errno));
-        exit(1);
-    }
-    onedict(fd, fdout, "dict");
-    fd = close(fd);
-    if (fd < 0)
-    {
-        fprintf(stderr, "close(\"words\") -> %s\n", strerror(errno));
-        exit(1);
-    }
-    
-    fd = open("twl06-ScrabbleUSwords", O_RDONLY);
-    if (fd < 0)
-    {
-        fprintf(stderr, "open(\"twl06-ScrabbleUSwords\", O_RDONLY) -> %s\n", strerror(errno));
-        exit(1);
-    }
-    onedict(fd, fdout, "scrabbleUSwords");
-    fd = close(fd);
-    if (fd < 0)
-    {
-        fprintf(stderr, "close(\"twl06-ScrabbleUSwords\") -> %s\n", strerror(errno));
-        exit(1);
-    }
-    fd = open("sowpods-ScrabbleUKwords", O_RDONLY);
-    if (fd < 0)
-    {
-        fprintf(stderr, "open(\"sowpods-ScrabbleUKwords\", O_RDONLY) -> %s\n", strerror(errno));
-        exit(1);
-    }
-    onedict(fd, fdout, "scrabbleUKwords");
-    fd = close(fd);
-    if (fd < 0)
-    {
-        fprintf(stderr, "close(\"sowpods-ScrabbleUKwords\") -> %s\n", strerror(errno));
-        exit(1);
+    for (i = 1; i < argc; i += 2) {
+        int fd = open(argv[i], O_RDONLY);
+        if (fd < 0) {
+            fprintf(stderr, "open(\"%s\", O_RDONLY) -> %s\n",
+                    argv[i], strerror(errno));
+            exit(1);
+        }
+        onedict(fd, fdout, argv[i + 1]);
+        fd = close(fd);
+        if (fd < 0) {
+            fprintf(stderr, "close(\"%s\") -> %s\n", argv[i], strerror(errno));
+            exit(1);
+        }
     }
     int err = write(fdout, buff, snprintf(buff, sizeof(buff),
                                           "#define MAXLEN %d\n", maxlen));
@@ -410,6 +383,11 @@ int main (int argc __attribute__ ((unused)), char argv[] __attribute__ ((unused)
         fprintf(stderr,
                 "write(\"xworddict.h\", \"#define MAXLEN %d\n -> %s\n",
                 maxlen, strerror(errno));
+        exit(1);
+    }
+    fdout = close(fdout);
+    if (fdout < 0) {
+        fprintf(stderr, "close(\"%s\") -> %s\n", "xworddict.h", strerror(errno));
         exit(1);
     }
     return 0;
