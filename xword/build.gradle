@@ -32,6 +32,21 @@ exec {
 }
 //*/
 
+// Update these three to make new version
+def VERSIONCODE = 4
+def VERSIONNAME = "1.3"
+def CHANGESTRING = "Fake hint so it works with hardware keyboard"
+
+def CHANGELOGS = "fastlane/metadata/android/en-US/changeLogs/"
+def CHANGEFILE = CHANGELOGS + VERSIONCODE + ".txt"
+exec {
+    commandLine "echo", "${CHANGESTRING.toString()}"
+    standardOutput = new FileOutputStream(rootProject.file(CHANGEFILE))
+}
+exec {
+    commandLine "git", "add", "../" + "${CHANGELOGS.toString()}"
+}
+
 android {
     namespace 'uk.co.yahoo.p1rpp.xword'
     compileSdk 33
@@ -49,8 +64,8 @@ android {
         applicationId "uk.co.yahoo.p1rpp.xword"
         minSdk 24
         targetSdk 33
-        versionCode 3
-        versionName "1.2"
+        versionCode VERSIONCODE
+        versionName VERSIONNAME
     }
 
     buildTypes {

@@ -1,0 +1,1 @@
+Fake hint so it works with hardware keyboard
