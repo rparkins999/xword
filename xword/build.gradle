@@ -46,6 +46,9 @@ exec {
 exec {
     commandLine "git", "add", "../" + "${CHANGELOGS.toString()}"
 }
+exec {
+    commandLine "sed", "-i", "/This is version/cThis is version " + VERSIONNAME + ".", "../README.md"
+}
 
 android {
     namespace 'uk.co.yahoo.p1rpp.xword'
