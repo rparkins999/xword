@@ -18,6 +18,8 @@ package uk.co.yahoo.p1rpp.xword;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
@@ -25,6 +27,8 @@ import android.view.KeyEvent;
 import android.view.RoundedCorner;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -51,6 +55,8 @@ public class MainActivity extends Activity
     int mSelectedDictionary;
     static final String SELECTEDDICTIONARY = "SelectedDictionary";
     static final String SHOWING_HINT = "ShowingHint";
+    LinearLayout mVersionInfo;
+    int mOrientation;
 
     // button to do actions
     // if we are displaying the list of matches,
@@ -95,11 +101,21 @@ public class MainActivity extends Activity
     public void onNothingSelected(AdapterView<?> parent) {}
 
     private void focusEditor() {
-/* this doesn't seem to work */
-//        InputMethodManager imm =
-//            (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-//        imm.showSoftInput(mEditor, InputMethodManager.SHOW_FORCED);
-        mEditor.requestFocus();
+        mResults.setVisibility(View.GONE);
+        if (mOrientation == Configuration.ORIENTATION_LANDSCAPE)
+        {
+            mVersionInfo.setVisibility(View.GONE);
+        }
+        mEditor.setVisibility(View.VISIBLE);
+        if (mEditor.requestFocus()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                mEditor.getWindowInsetsController().show(WindowInsets.Type.ime());
+            } else {
+                InputMethodManager imm = (InputMethodManager) getSystemService(
+                    Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(mEditor, InputMethodManager.SHOW_IMPLICIT);
+            }
+        }
     }
 
     // callback from JNI code, called for each match found
@@ -153,10 +169,8 @@ public class MainActivity extends Activity
             search(mEditor.getText().toString(), mSelectedDictionary);
         } else{
             mEditor.setText("");
-            mEditor.setVisibility(View.VISIBLE);
             focusEditor();
             setActionButton();
-            mResults.setVisibility(View.GONE);
         }
         mShowingResults = showingResults;
     }
@@ -197,13 +211,15 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         LinearLayout container = findViewById(R.id.container);
+        mVersionInfo = new LinearLayout(this);
+        mVersionInfo.setOrientation(LinearLayout.VERTICAL);
         // display version onformation
         String versionInfo = getString(R.string.app_name) +
             " version " + BuildConfig.VERSION_NAME +
             " built " + getString(R.string.build_time);
         TextView buildStamp = new TextView(this);
         buildStamp.setText(versionInfo);
-        container.addView(buildStamp);
+        mVersionInfo.addView(buildStamp);
         String gitinfo1 = getString(R.string.build_git1);
         if ((gitinfo1 != null) && !gitinfo1.isEmpty()) {
             TextView gitstamp = new TextView(this);
@@ -212,8 +228,21 @@ public class MainActivity extends Activity
                 + "\n" + getString(R.string.build_git2)
                 + "\n" + getString(R.string.build_git3)
             );
-            container.addView(gitstamp);
+            mVersionInfo.addView(gitstamp);
         }
+        container.addView(mVersionInfo);
+        mActionButton = new Button(this);
+        mActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // pressing it flips between the test string input mode
+                // and the match list diplay mode
+                doActionButton(!mShowingResults);
+            }
+        });
+        ViewGroup.LayoutParams ablp = new ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT);
         // display the dictionary choice spinner
         // default layout direction is horizontal
         LinearLayout ll = new LinearLayout(this);
@@ -229,20 +258,15 @@ public class MainActivity extends Activity
         mDictSelector.setAdapter(ad);
         mDictSelector.setFocusable(false);
         ll.addView(mDictSelector);
-        container.addView(ll);
+        mOrientation = getResources().getConfiguration().orientation;
+        if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            ll.addView(mActionButton, ablp);
+            container.addView(ll);
+        } else {
+            container.addView(ll);
+            container.addView(mActionButton, ablp);
+        }
         // display the action button
-        mActionButton = new Button(this);
-        mActionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // pressing it flips between the test string input mode
-                // and the match list diplay mode
-                doActionButton(!mShowingResults);
-            }
-        });
-        container.addView(mActionButton, new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT));
         // display the test string editor
         // it will later be made invisible if we are in match list diplay mode
         mEditor = new MatchTextEditor(this);
@@ -284,9 +308,8 @@ public class MainActivity extends Activity
             // the match list can be big
             // so we recreate it instead of saving and restoring it
             doActionButton(true);
+            mVersionInfo.setVisibility(View.VISIBLE);
         } else {
-            // in test string input mode, don't show results list
-            mResults.setVisibility(View.GONE);
             focusEditor();
         }
         enterKeyDown = false;
@@ -300,10 +323,8 @@ public class MainActivity extends Activity
     @Override
     public void onBackPressed() {
         if (mShowingResults) {
-            mResults.setVisibility(View.GONE);
             mShowingResults = false;
             setActionButton();
-            mEditor.setVisibility(View.VISIBLE);
             focusEditor();
         } else {
             super.onBackPressed();
@@ -346,7 +367,6 @@ public class MainActivity extends Activity
                     }
                 }
             }
-// Ok for HW keyboard            return true; // we've dealt with it
             return mEditor.dispatchKeyEvent(event);
         } else if (mShowingResults) {
             // if we are displaying the match list
@@ -362,10 +382,8 @@ public class MainActivity extends Activity
                 || (keycode == KeyEvent.KEYCODE_FORWARD_DEL))
             {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                    mResults.setVisibility(View.GONE);
                     mShowingResults = false;
                     setActionButton();
-                    mEditor.setVisibility(View.VISIBLE);
                     focusEditor();
                 }
             }
