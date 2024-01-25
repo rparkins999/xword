@@ -137,20 +137,36 @@ public class MainActivity extends Activity
             // but we find the largert one just in case
             RoundedCorner rc = disp.getRoundedCorner(
                 RoundedCorner.POSITION_BOTTOM_LEFT);
-            int j = rc.getRadius();
-            if (j > i) { i = j; }
+            if (rc != null) {
+                int j = rc.getRadius();
+                if (j > i) {
+                    i = j;
+                }
+            }
             rc = disp.getRoundedCorner(
                 RoundedCorner.POSITION_BOTTOM_RIGHT);
-            j = rc.getRadius();
-            if (j > i) { i = j; }
+            if (rc != null) {
+                int j = rc.getRadius();
+                if (j > i) {
+                    i = j;
+                }
+            }
             rc = disp.getRoundedCorner(
                 RoundedCorner.POSITION_TOP_LEFT);
-            j = rc.getRadius();
-            if (j > i) { i = j; }
+            if (rc != null) {
+                int j = rc.getRadius();
+                if (j > i) {
+                    i = j;
+                }
+            }
             rc = disp.getRoundedCorner(
                 RoundedCorner.POSITION_TOP_RIGHT);
-            j = rc.getRadius();
-            if (j > i) { i = j; }
+            if (rc != null) {
+                int j = rc.getRadius();
+                if (j > i) {
+                    i = j;
+                }
+            }
         }
         return i;
     }
