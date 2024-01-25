@@ -33,9 +33,9 @@ exec {
 //*/
 
 // Update these three to make new version
-def VERSIONCODE = 4
-def VERSIONNAME = "1.3"
-def CHANGESTRING = "Fake hint so it works with hardware keyboard"
+def VERSIONCODE = 5
+def VERSIONNAME = "1.4"
+def CHANGESTRING = "Update for latest Android Studio"
 
 def CHANGELOGS = "fastlane/metadata/android/en-US/changeLogs/"
 def CHANGEFILE = CHANGELOGS + VERSIONCODE + ".txt"
