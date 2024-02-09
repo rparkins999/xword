@@ -40,8 +40,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 public class MainActivity extends Activity
-    implements AdapterView.OnItemSelectedListener
-{
+    implements AdapterView.OnItemSelectedListener,
+    View.OnAttachStateChangeListener {
     // Used to load the 'xword' library on application startup.
     static {
         System.loadLibrary("xwordsearch-jni");
@@ -49,6 +49,8 @@ public class MainActivity extends Activity
 
     // this declares the native code dictionary search function
     native void search(String s, int i);
+
+    LinearLayout m_container;
 
     // this spinner allows selection of which distionary to use
     Spinner mDictSelector;
@@ -90,20 +92,19 @@ public class MainActivity extends Activity
     // this is called when a dictionary is selected from the spinner
     @Override
     public void onItemSelected(
-        AdapterView<?> parent, View view, int position, long id)
-    {
+            AdapterView<?> parent, View view, int position, long id) {
         mSelectedDictionary = position;
     }
 
     // this is called when nothing is selected from the spinner
     // it should never happen, but the interface requires it
     @Override
-    public void onNothingSelected(AdapterView<?> parent) {}
+    public void onNothingSelected(AdapterView<?> parent) {
+    }
 
     private void focusEditor() {
         mResults.setVisibility(View.GONE);
-        if (mOrientation == Configuration.ORIENTATION_LANDSCAPE)
-        {
+        if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             mVersionInfo.setVisibility(View.GONE);
         }
         mEditor.setVisibility(View.VISIBLE);
@@ -112,7 +113,7 @@ public class MainActivity extends Activity
                 mEditor.getWindowInsetsController().show(WindowInsets.Type.ime());
             } else {
                 InputMethodManager imm = (InputMethodManager) getSystemService(
-                    Context.INPUT_METHOD_SERVICE);
+                        Context.INPUT_METHOD_SERVICE);
                 imm.showSoftInput(mEditor, InputMethodManager.SHOW_IMPLICIT);
             }
         }
@@ -132,39 +133,41 @@ public class MainActivity extends Activity
         // return 0 if this Android version doesn't do rounded corners
         int i = 0;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            Display disp = getDisplay();
-            // the corner radii are normally all the same
-            // but we find the largert one just in case
-            RoundedCorner rc = disp.getRoundedCorner(
-                RoundedCorner.POSITION_BOTTOM_LEFT);
-            if (rc != null) {
-                int j = rc.getRadius();
-                if (j > i) {
-                    i = j;
+            WindowInsets insets = m_container.getRootWindowInsets();
+            if (insets != null) {
+                // the corner radii are normally all the same
+                // but we find the largest one just in case
+                RoundedCorner rc = insets.getRoundedCorner(
+                        RoundedCorner.POSITION_BOTTOM_LEFT);
+                if (rc != null) {
+                    int j = rc.getRadius();
+                    if (j > i) {
+                        i = j;
+                    }
                 }
-            }
-            rc = disp.getRoundedCorner(
-                RoundedCorner.POSITION_BOTTOM_RIGHT);
-            if (rc != null) {
-                int j = rc.getRadius();
-                if (j > i) {
-                    i = j;
+                rc = insets.getRoundedCorner(
+                        RoundedCorner.POSITION_BOTTOM_RIGHT);
+                if (rc != null) {
+                    int j = rc.getRadius();
+                    if (j > i) {
+                        i = j;
+                    }
                 }
-            }
-            rc = disp.getRoundedCorner(
-                RoundedCorner.POSITION_TOP_LEFT);
-            if (rc != null) {
-                int j = rc.getRadius();
-                if (j > i) {
-                    i = j;
+                rc = insets.getRoundedCorner(
+                        RoundedCorner.POSITION_TOP_LEFT);
+                if (rc != null) {
+                    int j = rc.getRadius();
+                    if (j > i) {
+                        i = j;
+                    }
                 }
-            }
-            rc = disp.getRoundedCorner(
-                RoundedCorner.POSITION_TOP_RIGHT);
-            if (rc != null) {
-                int j = rc.getRadius();
-                if (j > i) {
-                    i = j;
+                rc = insets.getRoundedCorner(
+                        RoundedCorner.POSITION_TOP_RIGHT);
+                if (rc != null) {
+                    int j = rc.getRadius();
+                    if (j > i) {
+                        i = j;
+                    }
                 }
             }
         }
@@ -178,12 +181,12 @@ public class MainActivity extends Activity
             mEditor.setVisibility(View.GONE);
             mActionButton.setText(getString(R.string.reset));
             mAdapter.clear();
-            mResults.setVisibility(View.VISIBLE);
             // This is needed if the screen was rotated
             // to prevent Android from setting the focus on the button
             findViewById(R.id.container).requestFocus();
             search(mEditor.getText().toString(), mSelectedDictionary);
-        } else{
+            mResults.setVisibility(View.VISIBLE);
+        } else {
             mEditor.setText("");
             focusEditor();
             setActionButton();
@@ -195,22 +198,16 @@ public class MainActivity extends Activity
     public void setActionButton() {
         // get the test sttring
         String editorContent = mEditor.getText().toString();
-        if (   (!mEditor.mShowingHint)
-            && (editorContent.length() > 0))
-        {
-            if (editorContent.contains("?"))
-            {
+        if ((!mEditor.mShowingHint)
+                && (editorContent.length() > 0)) {
+            if (editorContent.contains("?")) {
                 mActionButton.setText(getString(R.string.match));
-            }
-            else
-            {
+            } else {
                 mActionButton.setText(getString(R.string.anagram));
             }
             mActionButton.setEnabled(true);
             mActionButton.setVisibility(View.VISIBLE);
-        }
-        else
-        {
+        } else {
             mActionButton.setEnabled(false);
             mActionButton.setVisibility(View.GONE);
         }
@@ -226,13 +223,14 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        LinearLayout container = findViewById(R.id.container);
+        m_container = findViewById(R.id.container);
+        m_container.addOnAttachStateChangeListener(this);
         mVersionInfo = new LinearLayout(this);
         mVersionInfo.setOrientation(LinearLayout.VERTICAL);
         // display version onformation
         String versionInfo = getString(R.string.app_name) +
-            " version " + BuildConfig.VERSION_NAME +
-            " built " + getString(R.string.build_time);
+                " version " + BuildConfig.VERSION_NAME +
+                " built " + getString(R.string.build_time);
         TextView buildStamp = new TextView(this);
         buildStamp.setText(versionInfo);
         mVersionInfo.addView(buildStamp);
@@ -240,13 +238,13 @@ public class MainActivity extends Activity
         if ((gitinfo1 != null) && !gitinfo1.isEmpty()) {
             TextView gitstamp = new TextView(this);
             gitstamp.setText(
-                gitinfo1
-                + "\n" + getString(R.string.build_git2)
-                + "\n" + getString(R.string.build_git3)
+                    gitinfo1
+                            + "\n" + getString(R.string.build_git2)
+                            + "\n" + getString(R.string.build_git3)
             );
             mVersionInfo.addView(gitstamp);
         }
-        container.addView(mVersionInfo);
+        m_container.addView(mVersionInfo);
         mActionButton = new Button(this);
         mActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -257,8 +255,8 @@ public class MainActivity extends Activity
             }
         });
         ViewGroup.LayoutParams ablp = new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT);
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
         // display the dictionary choice spinner
         // default layout direction is horizontal
         LinearLayout ll = new LinearLayout(this);
@@ -269,7 +267,7 @@ public class MainActivity extends Activity
         // the spinner itself
         mDictSelector = new Spinner(this);
         ArrayAdapter<CharSequence> ad = ArrayAdapter.createFromResource(
-            this, R.array.dictionaries, R.layout.resultitem);
+                this, R.array.dictionaries, R.layout.resultitem);
         ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDictSelector.setAdapter(ad);
         mDictSelector.setFocusable(false);
@@ -277,10 +275,10 @@ public class MainActivity extends Activity
         mOrientation = getResources().getConfiguration().orientation;
         if (mOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             ll.addView(mActionButton, ablp);
-            container.addView(ll);
+            m_container.addView(ll);
         } else {
-            container.addView(ll);
-            container.addView(mActionButton, ablp);
+            m_container.addView(ll);
+            m_container.addView(mActionButton, ablp);
         }
         // display the action button
         // display the test string editor
@@ -293,7 +291,7 @@ public class MainActivity extends Activity
         } else {
             // recover state from savedInstanceState
             mSelectedDictionary =
-                savedInstanceState.getInt(SELECTEDDICTIONARY, 0);
+                    savedInstanceState.getInt(SELECTEDDICTIONARY, 0);
             String editorContent = savedInstanceState.getString(EDITOR_CONTENT);
             if (editorContent != null) {
                 mEditor.setText(editorContent);
@@ -302,21 +300,19 @@ public class MainActivity extends Activity
                 mEditor.setSelection(i, j);
             }
             mShowingResults =
-                savedInstanceState.getBoolean(ACTION_BUTTON_PRESSED);
+                    savedInstanceState.getBoolean(ACTION_BUTTON_PRESSED);
             mEditor.mShowingHint =
-                savedInstanceState.getBoolean(SHOWING_HINT);
+                    savedInstanceState.getBoolean(SHOWING_HINT);
         }
         mEditor.createExtras();
-        container.addView(mEditor);
+        m_container.addView(mEditor);
         // display the match list
         // it will later be made invisible if se are in test string input mode
         mAdapter = new ArrayAdapter<>(this, R.layout.resultitem);
         mResults = new ListView(this);
-        int p = getCornerAllowance() * 3 / 10;
-        mResults.setPadding(p, 0, p, p);
         mResults.setAdapter(mAdapter);
         mResults.setFocusable(false);
-        container .addView(mResults);
+        m_container.addView(mResults);
         mDictSelector.setSelection(mSelectedDictionary);
         mDictSelector.setOnItemSelectedListener(this);
         setActionButton();
@@ -363,18 +359,16 @@ public class MainActivity extends Activity
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 // key down, remember we've seen it and wait for key up
                 enterKeyDown = true;
-            // ignore a redundant key up
-            } else if (   enterKeyDown
-                       && (event.getAction() == KeyEvent.ACTION_UP))
-            {
+                // ignore a redundant key up
+            } else if (enterKeyDown
+                    && (event.getAction() == KeyEvent.ACTION_UP)) {
                 // key up after key doen
                 enterKeyDown = false;
                 if (mShowingResults) {
                     // go back to text entry
                     doActionButton(false);
                 } else {
-                    if (mEditor.mShowingHint)
-                    {
+                    if (mEditor.mShowingHint) {
                         // if no text has been entered, quit
                         finish();
                     } else {
@@ -390,13 +384,12 @@ public class MainActivity extends Activity
             // (on-screen keyboard can't be active)
             // go back to the test string input mode
             // and pass the character to it
-            if (   Character.isLetter(c)
-                || (c == ' ')
-                || (c == '?')
-                || (c == '/')
-                || (keycode == KeyEvent.KEYCODE_DEL)
-                || (keycode == KeyEvent.KEYCODE_FORWARD_DEL))
-            {
+            if (Character.isLetter(c)
+                    || (c == ' ')
+                    || (c == '?')
+                    || (c == '/')
+                    || (keycode == KeyEvent.KEYCODE_DEL)
+                    || (keycode == KeyEvent.KEYCODE_FORWARD_DEL)) {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) {
                     mShowingResults = false;
                     setActionButton();
@@ -411,7 +404,6 @@ public class MainActivity extends Activity
     }
 
 
-
     // save state if this class gets put to sleep
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
@@ -422,5 +414,14 @@ public class MainActivity extends Activity
         outState.putString(EDITOR_CONTENT, mEditor.getText().toString());
         outState.putInt(SELECTION_START, mEditor.getSelectionStart());
         outState.putInt(SELECTION_END, mEditor.getSelectionEnd());
+    }
+
+    @Override
+    public void onViewAttachedToWindow(@NonNull View view) {
+        int p = getCornerAllowance() * 3 / 10;
+        mResults.setPadding(p,0,p,p);
+    }
+    @Override
+    public void onViewDetachedFromWindow(@NonNull View view) {
     }
 }
